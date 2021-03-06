@@ -2,6 +2,13 @@ Eleventh Ruby on Rails Bootcamp assignment.
 
 A simple blackjack CLI game written in Ruby.
 
+INSTRUCTIONS:
+  - Download all files to the same folder.
+  - To play:
+    - In terminal: ruby game.rb
+  - To test:
+    - In terminal: ruby tests.rb
+
 NOTES:
   - All Aces are currently worth 11, so the player can actually draw two aces and lose immediately, which doesn't feel right.
   - Dealer only bets on a hand that's less than 17.
