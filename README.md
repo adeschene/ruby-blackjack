@@ -4,7 +4,7 @@ A simple blackjack CLI game written in Ruby.
 
 INSTRUCTIONS:
   - Download all files to the same folder.
-  - Make sure Ruby is installed.
+  - Make sure you have Ruby installed.
   - If you want to run tests, make sure RSpec is installed.
   - To play:
     - In terminal: ruby game.rb
