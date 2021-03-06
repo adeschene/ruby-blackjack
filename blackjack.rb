@@ -1,7 +1,5 @@
-# Handles the game logic, flow, rules, etc.
-class Game
-  # Allows us to get 'winner' outside of class
-  attr_reader :winner
+class Blackjack # Handles the game logic, flow, rules, etc.
+  attr_reader :winner # Allows us to get 'winner' outside of class
 
   def initialize
     # Variables to keep track of the user, dealer, and if/who won the game
@@ -10,16 +8,14 @@ class Game
     @winner = nil
   end
 
-  # The dealer deals 2 cards to each player
-  def initial_deal
+  def initial_deal # The dealer deals 2 cards to each player
     while @user.hand.to_a.count < 2 and @dealer.hand.to_a.count < 2
       @user.hand = @user.hand.push(@dealer.deal_card)
       @dealer.hand = @dealer.hand.push(@dealer.deal_card)
     end
   end
 
-  # Check for win states, lose states, handle player turns, hits, etc.
-  def evaluate_game
+  def evaluate_game # Check for win/lose states, handle player turns, hits, etc.
     if @user.stayed # If user has stayed, the dealer is the active player
       dealer_hand_sum = @dealer.hand.sum
 
@@ -44,116 +40,47 @@ class Game
       when 21 then @winner = 'user'
       # Above 21 means user busted; dealer wins (max hand sum should be 31)
       when 22..31 then @winner = 'dealer'
-      else puts "Error in evaluate_game" # Shouldn't ever be here
+      else print "Error in evaluate_game" # Shouldn't ever be here
       end
     end
   end
 
-  def show_hands
-    dealer_info = @user.stayed ?
-      [ @dealer.hand, @dealer.hand.sum ] : # If user stayed, display dealers full hand/sum
-      [ "[X,#{@dealer.hand[1]}]", ">#{@dealer.hand[1]}" ] # While user is playing, obscure dealer info
-    puts "\nDealer's hand: #{dealer_info[0]} == #{dealer_info[1]}\nYour hand: #{@user.hand} == #{@user.hand.sum}\n"
+  def show_hands # Print dealer (obsured if user playing) and user hands
+    format_hand = lambda {
+      |cards| cards.map { |card| "\e[5;30;47m%2s%1s\e[0m" % [card,""] }.join(" ")
+    }
+    # If user stayed, display dealers full hand/sum
+    dealer_info = @user.stayed ? [ @dealer.hand, @dealer.hand.sum ]
+      # While user is playing, obscure dealer info
+      : [ ['X', @dealer.hand[1]], ">#{@dealer.hand[1]}" ]
+    dealer_string = "\n%8s\n" % "%-60s" % "Dealer's hand: [ #{format_hand.call(dealer_info[0])} ] == #{dealer_info[1]}"
+    user_string   = "\n%12s\n\n" % "%-60s" % "Your hand: [ #{format_hand.call(@user.hand)} ] == #{@user.hand.sum}"
+    print dealer_string + user_string
   end
 
   private # Private methods are only callable from inside the class
-    # Prompt user to hit or stay; react to decision
-    def prompt_user
-      puts "\nWhat will you do? (hit/stay):"
+    def prompt_user # Prompt user to hit or stay; react to decision
+      print "\n%34s" % "What will you do? (hit/stay): "
 
       input = gets.chomp # Get user input from console
 
-      if input == 'hit'
+      case input
+      when 'hit','h'
         hit('user')
-      elsif input == 'stay'
+      when 'stay','s'
         @user.stayed = true
-        puts "\nYou stayed."
+        print "\n\n%25s\n" % "You stayed."
+        gets # Pause for user to see action
       else
         prompt_user # Restart function if user entered something invalid
       end
     end
 
-    # Have dealer deal a card to whichever player is hitting
-    def hit(player)
-      player == 'user' ?
-        # Ruby passes by value (kind of?), so assignment must be done this way
-        @user.hand = @user.hand.push(@dealer.deal_card) :
-        @dealer.hand = @dealer.hand.push(@dealer.deal_card)
-      puts (player == 'user' ? "\nYou" : "\nDealer").concat(" hit.")
+    def hit(player) # Have dealer deal a card to whichever player is hitting
+      # Ruby passes by value (kind of?), so assignment must be done this way
+      player == 'user' ? @user.hand = @user.hand.push(@dealer.deal_card)
+        : @dealer.hand = @dealer.hand.push(@dealer.deal_card)
+      print "\n\n%#{player == 'user' ? 24 : 26}s\n" % (player == 'user' ? "You hit." : "Dealer hits.")
+      gets # Pause for user to see action
     end
-end
-
-# A player in the game; has a hand consisting of cards
-class Player
-  # Allows us to get and set 'hand' outside of class
-  attr_accessor :hand
-
-  def initialize
-    @hand = [] # Create empty hand array
-  end
-end
-
-# Is a player; has the deck; deals cards
-class Dealer < Player
-  def initialize
-    super() # Required to initialize variables in parent class
-    # Basically 8 decks worth of cards, with aces always worth 11
-    @deck = [2,3,4,5,6,7,8,9,10,10,10,10,11] * 32
-  end
-
-  def deal_card
-    @deck.sample # Return a random card between 2 and 11
-  end
-end
-
-# Is a player; has the ability to stay
-class User < Player
-  # Allows us to get 'stayed' outside of class
-  attr_accessor :stayed
-
-  def initialize
-    super() # Required to initialize variables in parent class
-    @stayed = false # Tracks whether user has stayed
-  end
-end
-
-# Game session variables
-user_quit  = false # Keeps track of whether user chose to quit playing
-first_game = true # Keeps track of whether this is user's first game
-
-# Keep track of user's wins/loses this session
-wins  = 0
-loses = 0
-
-# Session loop
-while user_quit == false
-  # Initialize game
-  game = Game.new
-  game.initial_deal
-
-  # Display intro text (alternate text for a little pun ^_^)
-  puts first_game ? "\n\nWelcome to BLACKJACK!" : "\n\nWelcome BACK, JACK!"
-  puts "\nSCORE: #{wins} - #{loses}" # Display score
-
-  # Game loop
-  while game.winner == nil
-    game.show_hands # Display hands to user
-    game.evaluate_game # Evaluate player hands, prompt/execute hits, stays, determine winner
-  end
-
-  # Announce winner, iterate score
-  if game.winner == 'user'
-    wins += 1
-    puts "\nYou won!"
-  else
-    loses += 1
-    puts "\nYou lost..."
-  end
-
-  # Prompt for user to play another game
-  puts "\nDo you want to play again? (y/n)"
-  user_quit = true if gets.chomp != 'y'
-
-  # Make it known that the next game won't be user's first
-  first_game = false if first_game
 end
